@@ -64,47 +64,53 @@ public class EsimPlugin extends CordovaPlugin{
         callbackContext.sendPluginResult(new PluginResult(Status.OK, result));
     }
 
-    private void installEsim(JSONArray args, CallbackContext callbackContext) {         
-        BroadcastReceiver receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (!ACTION_DOWNLOAD_SUBSCRIPTION.equals(intent.getAction())) {
-                    return;
-                }
-               int resultCode = getResultCode();
-               int detailedCode = intent.getIntExtra(
-                    EuiccManager.EXTRA_EMBEDDED_SUBSCRIPTION_DETAILED_CODE,
-                    0 /* defaultValue*/);
-        
-                // If the result code is a resolvable error, call startResolutionActivity
-                if (resultCode == EuiccManager.EMBEDDED_SUBSCRIPTION_RESULT_RESOLVABLE_ERROR) {
-                    try{
-                        PendingIntent callbackIntent = PendingIntent.getBroadcast(
-                            mainContext, 0 /* requestCode */, intent,
-                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-                        mgr.startResolutionActivity(
-                            cordova.getActivity(),
-                            0 /* requestCode */,
-                            intent,
-                            callbackIntent);
-                    } catch (Exception e) {
-                      callbackContext.error("EMBEDDED_SUBSCRIPTION_RESULT_RESOLVABLE_ERROR - Can't setup eSim due to Activity error " + e.getLocalizedMessage());
+    private void installEsim(JSONArray args, CallbackContext callbackContext) {   
+        try{
+            initMgr(); 
+            BroadcastReceiver receiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (!ACTION_DOWNLOAD_SUBSCRIPTION.equals(intent.getAction())) {
+                        return;
+                    }
+                   int resultCode = getResultCode();
+                   int detailedCode = intent.getIntExtra(
+                        EuiccManager.EXTRA_EMBEDDED_SUBSCRIPTION_DETAILED_CODE,
+                        0 /* defaultValue*/);
+            
+                    // If the result code is a resolvable error, call startResolutionActivity
+                    if (resultCode == EuiccManager.EMBEDDED_SUBSCRIPTION_RESULT_RESOLVABLE_ERROR) {
+                        try{
+                            PendingIntent callbackIntent = PendingIntent.getBroadcast(
+                                mainContext, 0 /* requestCode */, intent,
+                                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+                            mgr.startResolutionActivity(
+                                cordova.getActivity(),
+                                0 /* requestCode */,
+                                intent,
+                                callbackIntent);
+                        } catch (Exception e) {
+                          callbackContext.error("EMBEDDED_SUBSCRIPTION_RESULT_RESOLVABLE_ERROR - Can't setup eSim due to Activity error " + e.getLocalizedMessage());
+                        }
                     }
                 }
-            }
-        };
-        mainContext.registerReceiver(receiver,
-            new IntentFilter(ACTION_DOWNLOAD_SUBSCRIPTION),
-            LPA_DECLARED_PERMISSION /* broadcastPermission*/,
-            null /* handler */);
-
-        address = args.getString(0);
-        matchingID = args.getString(1);
-        activationCode = "1$" + address + "$" + matchingID;
-        // Download subscription asynchronously.
-        DownloadableSubscription sub = DownloadableSubscription.forActivationCode(activationCode /* encodedActivationCode*/);
-        Intent intent = new Intent(ACTION_DOWNLOAD_SUBSCRIPTION);
-        PendingIntent callbackIntent = PendingIntent.getBroadcast(mainContext, 0 /* requestCode */, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-        mgr.downloadSubscription(sub, true /* switchAfterDownload */, callbackIntent);
+            };
+            mainContext.registerReceiver(receiver,
+                new IntentFilter(ACTION_DOWNLOAD_SUBSCRIPTION),
+                LPA_DECLARED_PERMISSION /* broadcastPermission*/,
+                null /* handler */);
+    
+            address = args.getString(0);
+            matchingID = args.getString(1);
+            activationCode = "1$" + address + "$" + matchingID;
+            // Download subscription asynchronously.
+            DownloadableSubscription sub = DownloadableSubscription.forActivationCode(activationCode /* encodedActivationCode*/);
+            Intent intent = new Intent(ACTION_DOWNLOAD_SUBSCRIPTION);
+            PendingIntent callbackIntent = PendingIntent.getBroadcast(mainContext, 0 /* requestCode */, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+            mgr.downloadSubscription(sub, true /* switchAfterDownload */, callbackIntent);
+        }catch (Exception e) {
+            callbackContext.error("Error install eSIM "  + e.getMessage());
+            callbackContext.sendPluginResult(new PluginResult(Status.ERROR));
+        }
     }       
 }
