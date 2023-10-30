@@ -70,7 +70,7 @@ public class EsimPlugin extends CordovaPlugin{
             BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (!action.equals(intent.getAction())) {
+                if (!ACTION_DOWNLOAD_SUBSCRIPTION.equals(intent.getAction())) {
                     return;
                 }
                 int resultCode = getResultCode();
@@ -89,7 +89,7 @@ public class EsimPlugin extends CordovaPlugin{
         // Download subscription asynchronously.
         DownloadableSubscription sub =
                 DownloadableSubscription.forActivationCode(activationCode /* encodedActivationCode*/);
-        Intent intent = new Intent(action);
+        Intent intent = new Intent(ACTION_DOWNLOAD_SUBSCRIPTION);
         PendingIntent callbackIntent = PendingIntent.getBroadcast(
             getContext(), 0 /* requestCode */, 
             intent, 
